@@ -193,7 +193,7 @@ func findPackageByDir(fileName string, lookups ...string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		if pkg, err := filepath.Rel(aLookup, abs); err == nil {
+		if pkg, err := filepath.Rel(aLookup, abs); err == nil && !strings.Contains(pkg, "..") {
 			return strings.Replace(pkg, string(filepath.Separator), "/", -1), nil
 		}
 	}
