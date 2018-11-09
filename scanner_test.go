@@ -52,3 +52,10 @@ func TestVars(t *testing.T) {
 	fmt.Println(proj.Names())
 
 }
+
+func TestScanPackage(t *testing.T) {
+	dir := "."
+	proj, err := ProjectByDir(dir)
+	assert.NoError(t, err)
+	assert.Equal(t, "symbols", proj.Package.Package)
+}

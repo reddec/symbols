@@ -29,6 +29,21 @@ func ProjectByPackage(packageImport string) (*Project, error) {
 	}, nil
 }
 
+func ProjectByDir(location string) (*Project, error) {
+	imps, pkg, err := selfScan(location)
+	if err != nil {
+		return nil, err
+	}
+	if len(imps) == 0 {
+		return nil, errors.New("no files")
+	}
+
+	return &Project{
+		Imports: imps,
+		Package: imps.ByImport(pkg),
+	}, nil
+}
+
 func (prj *Project) FindPackageImport(packageNameOrAlias string, file *File) (*Import, error) {
 	// find by alias
 	imps := prj.Imports.ByFile(file)

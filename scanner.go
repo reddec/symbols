@@ -39,13 +39,19 @@ type Import struct {
 }
 
 func Scan(dir string) (Imports, error) {
+	imps, _, err := selfScan(dir)
+	return imps, err
+}
+
+func selfScan(dir string) (Imports, string, error) {
 	var path = lookupFolders(dir)
 	selfPackage, err := findPackageByDir(dir, path...)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return scanPackageWithLookups(selfPackage, path)
+	imps, err := scanPackageWithLookups(selfPackage, path)
+	return imps, selfPackage, err
 }
 
 func ScanPackage(importPath string) (Imports, error) {
