@@ -59,3 +59,12 @@ func TestScanPackage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "symbols", proj.Package.Package)
 }
+
+func TestAliases(t *testing.T) {
+	dir := "./sample"
+	proj, err := ProjectByDir(dir)
+	assert.NoError(t, err)
+	sym, err := proj.FindSymbol("empty.Header", proj.Package.Files[0])
+	assert.NoError(t, err)
+	assert.Equal(t, sym.Import.Import, "net/http")
+}

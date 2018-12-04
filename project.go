@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"github.com/pkg/errors"
+	"strconv"
 	"strings"
 )
 
@@ -53,7 +54,8 @@ func (prj *Project) FindPackageImport(packageNameOrAlias string, file *File) (*I
 			alias = imp.Name.Name
 		}
 		if alias == packageNameOrAlias {
-			return imps.ByImport(imp.Path.Value), nil
+			importPath, _ := strconv.Unquote(imp.Path.Value)
+			return imps.ByImport(importPath), nil
 		}
 	}
 	// find by package
