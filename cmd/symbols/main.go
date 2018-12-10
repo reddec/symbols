@@ -25,6 +25,7 @@ type mutateStruct struct {
 	SelfMap      string   `long:"self-map" env:"SELF_MAP" description:"Name of function to map from source to target (self)"`
 	SelfUnmap    string   `long:"self-unmap" env:"SELF_UNMAP" description:"Name of function to map form target to source"`
 	Exclude      []string `long:"exclude" env:"EXCLUDE" description:"Exclude fields"`
+	Drop         []string `long:"drop" env:"DROP" description:"Drop fields"`
 	Value        bool     `long:"value" env:"VALUE" description:"Map items passed by value"`
 }
 
@@ -37,7 +38,14 @@ func (m *mutateStruct) Execute([]string) error {
 	if err != nil {
 		return err
 	}
-	mutated, err := coder.MutateStruct(sym, m.Exclude)
+
+	// imitate drop by excluding field from source
+	sym, err = coder.MutateStruct(sym, m.Drop)
+	if err != nil {
+		return err
+	}
+
+	mutated, err := coder.MutateStruct(sym, append(m.Exclude, m.Drop...))
 	if err != nil {
 		return err
 	}
