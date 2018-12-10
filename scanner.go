@@ -146,7 +146,9 @@ func scanDirectory(directory, assumingImportName string) (Import, []string, erro
 		imp.Directory = directory
 		fileName := filepath.Join(directory, fileStat.Name())
 		imports, f, err := scanFile(fileName)
-		imp.Package = f.Ast.Name.Name
+		if imp.Package == "" || strings.HasSuffix(imp.Package, "_test") {
+			imp.Package = f.Ast.Name.Name
+		}
 		if err != nil {
 			return imp, nil, errors.Wrapf(err, "scan file %v for import %v", fileName, assumingImportName)
 		}

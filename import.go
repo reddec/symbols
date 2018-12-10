@@ -2,6 +2,7 @@ package symbols
 
 import (
 	"go/ast"
+	"path/filepath"
 )
 
 type Type struct {
@@ -50,6 +51,15 @@ func (imp *Import) FindSymbol(name string) *Symbol {
 		node := f.FindSymbol(name)
 		if node != nil {
 			return &Symbol{Import: imp, File: f, Node: node, Name: name}
+		}
+	}
+	return nil
+}
+
+func (imp *Import) FindFile(name string) *File {
+	for _, f := range imp.Files {
+		if filepath.Base(f.Filename) == name {
+			return f
 		}
 	}
 	return nil

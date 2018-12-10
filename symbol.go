@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"go/ast"
 	"reflect"
+	"strconv"
 )
 
 type Symbol struct {
@@ -14,6 +15,12 @@ type Symbol struct {
 	Node    ast.Node
 	Name    string
 	BuiltIn bool
+}
+
+func (sym *Symbol) WithNode(node ast.Node) *Symbol {
+	s := *sym
+	s.Node = node
+	return &s
 }
 
 func (sym *Symbol) String() string {
@@ -129,8 +136,11 @@ func (sym *Symbol) IsType() bool {
 }
 
 type Field struct {
-	Name string
-	Type *Symbol
+	Name    string
+	Type    *Symbol
+	RawType ast.Expr
+	Raw     *ast.Field
+	Tags    map[string]string
 }
 
 func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
@@ -145,10 +155,18 @@ func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
 			if err != nil {
 				return nil, errors.Wrapf(err, "get real type of %v", p.Names[0])
 			}
+			var rawTags string
+			if p.Tag != nil {
+				rawTags, _ = strconv.Unquote(p.Tag.Value)
+			}
 			ans = append(ans, &Field{
-				Name: p.Names[0].Name,
-				Type: sm,
+				Name:    p.Names[0].Name,
+				Type:    sm,
+				RawType: p.Type,
+				Raw:     p,
+				Tags:    parseTags(rawTags),
 			})
+
 		}
 	}
 	return ans, nil
@@ -166,4 +184,55 @@ func realTypeQN(t ast.Node) string {
 	}
 	v := t.(*ast.Ident)
 	return v.Name
+}
+
+// see: func (tag StructTag) Lookup(key string)
+func parseTags(tag string) map[string]string {
+	ans := make(map[string]string)
+	for tag != "" {
+		// Skip leading space.
+		i := 0
+		for i < len(tag) && tag[i] == ' ' {
+			i++
+		}
+		tag = tag[i:]
+		if tag == "" {
+			break
+		}
+
+		// Scan to colon. A space, a quote or a control character is a syntax error.
+		// Strictly speaking, control chars include the range [0x7f, 0x9f], not just
+		// [0x00, 0x1f], but in practice, we ignore the multi-byte control characters
+		// as it is simpler to inspect the tag's bytes than the tag's runes.
+		i = 0
+		for i < len(tag) && tag[i] > ' ' && tag[i] != ':' && tag[i] != '"' && tag[i] != 0x7f {
+			i++
+		}
+		if i == 0 || i+1 >= len(tag) || tag[i] != ':' || tag[i+1] != '"' {
+			break
+		}
+		name := string(tag[:i])
+		tag = tag[i+1:]
+
+		// Scan quoted string to find value.
+		i = 1
+		for i < len(tag) && tag[i] != '"' {
+			if tag[i] == '\\' {
+				i++
+			}
+			i++
+		}
+		if i >= len(tag) {
+			break
+		}
+		qvalue := string(tag[:i+1])
+		tag = tag[i+1:]
+
+		value, err := strconv.Unquote(qvalue)
+		if err != nil {
+			break
+		}
+		ans[name] = value
+	}
+	return ans
 }
