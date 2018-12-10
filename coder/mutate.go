@@ -8,14 +8,26 @@ import (
 	"golang.org/x/tools/go/ast/astutil"
 )
 
-// Mutate struct in-place
+// Mutate struct
 func MutateStruct(symStruct *symbols.Symbol, excludeFields []string) (*symbols.Symbol, error) {
 	ok := symStruct.IsStruct()
 	if !ok {
 		return nil, errors.New("is not struct")
 	}
 	excluded := toSet(excludeFields)
-	node := astutil.Apply(symStruct.Node, func(cursor *astutil.Cursor) bool {
+	oldRoot := (symStruct.Node.(*ast.TypeSpec))
+	st := oldRoot.Type.(*ast.StructType)
+
+	cp := make([]*ast.Field, len(st.Fields.List))
+	copy(cp, st.Fields.List)
+
+	newRoot := *oldRoot
+	newTpSpec := *st
+	newRoot.Type = &newTpSpec
+
+	newTpSpec.Fields = &ast.FieldList{List: cp}
+
+	node := astutil.Apply(&newRoot, func(cursor *astutil.Cursor) bool {
 		f, ok := cursor.Node().(*ast.Field)
 		if !ok {
 			return true

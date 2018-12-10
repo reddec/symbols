@@ -69,4 +69,14 @@ func TestMutateStruct(t *testing.T) {
 	assert.NoError(t, err, "render")
 
 	assert.Equal(t, sample2, buf.String(), "compare generated")
+	// should not change original one
+	out = jen.NewFile("main")
+	generated, err = GenerateStruct(st, sym)
+	assert.NoError(t, err, "generate")
+	out.Add(generated)
+	buf = &bytes.Buffer{}
+	err = out.Render(buf)
+	assert.NoError(t, err, "render")
+
+	assert.Equal(t, sample, buf.String(), "compare generated")
 }
