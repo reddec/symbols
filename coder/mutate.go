@@ -15,7 +15,7 @@ func MutateStruct(symStruct *symbols.Symbol, excludeFields []string) (*symbols.S
 		return nil, errors.New("is not struct")
 	}
 	excluded := toSet(excludeFields)
-	oldRoot := (symStruct.Node.(*ast.TypeSpec))
+	oldRoot := symStruct.Node.(*ast.TypeSpec)
 	st := oldRoot.Type.(*ast.StructType)
 
 	cp := make([]*ast.Field, len(st.Fields.List))

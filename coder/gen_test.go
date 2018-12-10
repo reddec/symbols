@@ -80,3 +80,43 @@ func TestMutateStruct(t *testing.T) {
 
 	assert.Equal(t, sample, buf.String(), "compare generated")
 }
+
+type A struct {
+	Request string
+}
+
+type UserA struct {
+	UserID  int64
+	Request string
+}
+
+const sample3 = `package main
+
+import coder "github.com/reddec/symbols/coder"
+
+func MapA(srcA *coder.A, userID int64) *coder.UserA {
+	var destUserA coder.UserA
+	destUserA.UserID = userID
+	destUserA.Request = srcA.Request
+	return &destUserA
+}
+`
+
+func TestGenerateStructMapper(t *testing.T) {
+	out := jen.NewFile("main")
+	sym, err := symbols.ProjectByDir(".")
+	assert.NoError(t, err, "parse")
+	stA, err := sym.FindSymbol("A", sym.Package.FindFile("gen_test.go"))
+	assert.NoError(t, err, "find struct A")
+	userA, err := sym.FindSymbol("UserA", sym.Package.FindFile("gen_test.go"))
+	assert.NoError(t, err, "find struct UserA")
+
+	generated, err := GenerateStructMapper(stA, userA, sym, "MapA", true)
+	assert.NoError(t, err, "generate")
+	out.Add(generated)
+	buf := &bytes.Buffer{}
+	err = out.Render(buf)
+	assert.NoError(t, err, "render")
+
+	assert.Equal(t, sample3, buf.String(), "compare generated")
+}

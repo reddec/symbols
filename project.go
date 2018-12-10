@@ -92,6 +92,17 @@ func (prj *Project) FindSymbol(qualifiedName string, sourceFile *File) (*Symbol,
 	return sym, nil
 }
 
+// Find symbol defined only in the package
+func (prj *Project) FindLocalSymbol(name string) (*Symbol, error) {
+	for _, v := range prj.Package.Files {
+		sym, _ := prj.FindSymbol(name, v)
+		if sym != nil {
+			return sym, nil
+		}
+	}
+	return nil, errors.Errorf("symbol %v not found", name)
+}
+
 func (prj *Project) Names() []string {
 	var ans []string
 	for _, v := range prj.Package.Files {

@@ -23,6 +23,19 @@ func (sym *Symbol) WithNode(node ast.Node) *Symbol {
 	return &s
 }
 
+func (sym *Symbol) Equal(b *Symbol) bool {
+	if sym.Name != b.Name {
+		return false
+	}
+	if sym.BuiltIn != b.BuiltIn {
+		return false
+	}
+	if !sym.BuiltIn && (sym.Import.Import != b.Import.Import) {
+		return false
+	}
+	return true
+}
+
 func (sym *Symbol) String() string {
 	if sym.BuiltIn {
 		return sym.Name
@@ -181,6 +194,10 @@ func realTypeQN(t ast.Node) string {
 	}
 	if v, ok := t.(*ast.SelectorExpr); ok {
 		return realTypeQN(v.X) + "." + v.Sel.Name
+	}
+	if _, ok := t.(*ast.StructType); ok {
+		// embedded struct
+		return "struct{}"
 	}
 	v := t.(*ast.Ident)
 	return v.Name
