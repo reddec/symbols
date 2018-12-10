@@ -22,6 +22,8 @@ type mutateStruct struct {
 	Target       string   `long:"target" env:"TARGET" description:"Name of target struct" required:"true"`
 	Map          string   `long:"map" env:"MAP" description:"Name of function to map from source to target"`
 	Unmap        string   `long:"unmap" env:"UNMAP" description:"Name of function to map form target to source"`
+	SelfMap      string   `long:"self-map" env:"SELF_MAP" description:"Name of function to map from source to target (self)"`
+	SelfUnmap    string   `long:"self-unmap" env:"SELF_UNMAP" description:"Name of function to map form target to source"`
 	Exclude      []string `long:"exclude" env:"EXCLUDE" description:"Exclude fields"`
 	Value        bool     `long:"value" env:"VALUE" description:"Map items passed by value"`
 }
@@ -40,6 +42,7 @@ func (m *mutateStruct) Execute([]string) error {
 		return err
 	}
 	mutated.Name = m.Target
+	mutated.Import = proj.Package
 
 	out := jen.NewFilePathName(proj.Package.Import, proj.Package.Package)
 
@@ -60,7 +63,23 @@ func (m *mutateStruct) Execute([]string) error {
 	}
 	if m.Unmap != "" {
 		// generate map to source
-		generated, err = coder.GenerateSelfStructMapper(mutated, sym, proj, m.Unmap, !m.Value)
+		generated, err = coder.GenerateStructMapper(mutated, sym, proj, m.Unmap, !m.Value)
+		if err != nil {
+			return err
+		}
+		out.Add(generated)
+	}
+	if m.SelfMap != "" {
+		// generate map to destination
+		generated, err = coder.GenerateSelfStructMapper(sym, mutated, proj, m.SelfMap, !m.Value)
+		if err != nil {
+			return err
+		}
+		out.Add(generated)
+	}
+	if m.SelfUnmap != "" {
+		// generate map to source
+		generated, err = coder.GenerateSelfStructMapper(mutated, sym, proj, m.SelfUnmap, !m.Value)
 		if err != nil {
 			return err
 		}
