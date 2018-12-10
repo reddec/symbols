@@ -75,8 +75,8 @@ func (prj *Project) FindSymbol(qualifiedName string, sourceFile *File) (*Symbol,
 	parts := strings.Split(qualifiedName, ".")
 	var lookupImport *Import
 	if len(parts) == 1 {
-		// in current package
-		lookupImport = prj.Package
+		// in current file package
+		lookupImport = prj.Imports.ByImport(sourceFile.Import)
 	} else {
 		imp, err := prj.FindPackageImport(parts[0], sourceFile)
 		if err != nil {

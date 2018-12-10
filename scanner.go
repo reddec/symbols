@@ -16,6 +16,7 @@ import (
 
 type File struct {
 	Filename string
+	Import   string
 	Ast      *ast.File
 }
 
@@ -78,6 +79,9 @@ func scanPackageWithLookups(importName string, path []string) (Imports, error) {
 			return nil, err
 		}
 		imports[imp.Import] = imp
+		for _, file := range imp.Files {
+			file.Import = imp.Import
+		}
 		for _, importPath := range importSet {
 			if importPath == "C" { // special import
 				continue
