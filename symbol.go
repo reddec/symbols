@@ -73,6 +73,14 @@ func (sym *Symbol) IsStruct() bool {
 	return ok
 }
 
+func (sym *Symbol) IsInterface() bool {
+	if !sym.IsType() {
+		return false
+	}
+	_, ok := (sym.Node.(*ast.TypeSpec)).Type.(*ast.InterfaceType)
+	return ok
+}
+
 func (sym *Symbol) IsVariable() bool {
 	v, ok := sym.Node.(*ast.Ident)
 	if !ok {
@@ -164,22 +172,56 @@ func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
 	var ans []*Field
 	for _, p := range st.Fields.List {
 		if len(p.Names) == 1 {
-			sm, err := resolver.FindSymbol(realTypeQN(p.Type), sym.File)
+			field, err := wrapField(p, resolver, sym.File)
 			if err != nil {
-				return nil, errors.Wrapf(err, "get real type of %v", p.Names[0])
+				return nil, err
 			}
-			var rawTags string
-			if p.Tag != nil {
-				rawTags, _ = strconv.Unquote(p.Tag.Value)
-			}
-			ans = append(ans, &Field{
-				Name:    p.Names[0].Name,
-				Type:    sm,
-				RawType: p.Type,
-				Raw:     p,
-				Tags:    parseTags(rawTags),
-			})
+			ans = append(ans, field)
 
+		}
+	}
+	return ans, nil
+}
+
+func wrapField(p *ast.Field, resolver Resolver, file *File) (*Field, error) {
+	sm, err := resolver.FindSymbol(realTypeQN(p.Type), file)
+	if err != nil {
+		return nil, errors.Wrapf(err, "get real type of %v", p.Names[0])
+	}
+	var rawTags string
+	if p.Tag != nil {
+		rawTags, _ = strconv.Unquote(p.Tag.Value)
+	}
+	return &Field{
+		Name:    p.Names[0].Name,
+		Type:    sm,
+		RawType: p.Type,
+		Raw:     p,
+		Tags:    parseTags(rawTags),
+	}, nil
+}
+
+type Method struct {
+	Name    string
+	Raw     *ast.Field
+	RawCall *ast.FuncType
+}
+
+func (sym *Symbol) Methods(resolver Resolver) ([]*Method, error) {
+	ifs, ok := (sym.Node.(*ast.TypeSpec)).Type.(*ast.InterfaceType)
+	if !ok {
+		return nil, errors.New("is not a interface")
+	}
+	var ans []*Method
+	for _, method := range ifs.Methods.List {
+		if len(method.Names) == 1 {
+			name := method.Names[0].Name
+			fn := method.Type.(*ast.FuncType)
+			ans = append(ans, &Method{
+				Name:    name,
+				Raw:     method,
+				RawCall: fn,
+			})
 		}
 	}
 	return ans, nil

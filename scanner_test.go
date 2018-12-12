@@ -68,3 +68,19 @@ func TestAliases(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, sym.Import.Import, "net/http")
 }
+
+type SampleIface interface {
+	Greet(name string) (string, error)
+}
+
+func TestSymbol_Methods(t *testing.T) {
+	proj, err := ProjectByDir(".")
+	assert.NoError(t, err)
+	assert.Equal(t, "symbols", proj.Package.Package)
+	sym, err := proj.FindLocalSymbol("SampleIface")
+	assert.NoError(t, err, "find interface")
+	assert.True(t, sym.IsInterface())
+	methods, err := sym.Methods(proj)
+	assert.NoError(t, err, "methods")
+	t.Log(methods)
+}

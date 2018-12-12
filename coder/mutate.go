@@ -45,6 +45,10 @@ func MutateStruct(symStruct *symbols.Symbol, excludeFields []string) (*symbols.S
 	return symStruct.WithNode(node), nil
 }
 
+func MutateInterface(symInterface *symbols.Symbol, excludeMethods []string) (*symbols.Symbol, error) {
+	return nil, errors.New("stub")
+}
+
 func toSet(opt []string) map[string]bool {
 	ans := make(map[string]bool)
 	for _, o := range opt {
