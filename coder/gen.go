@@ -135,7 +135,7 @@ func GenerateValidationByComment(sym *symbols.Symbol, resolver symbols.Resolver,
 	}
 	var fields []string
 	for _, f := range sFields {
-		if strings.Contains(f.Name, requiredComment) {
+		if strings.Contains(f.Comment(), requiredComment) {
 			fields = append(fields, f.Name)
 		}
 	}
