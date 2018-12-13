@@ -32,7 +32,7 @@ func GenerateStruct(sym *symbols.Symbol, resolver symbols.Resolver) (jen.Code, e
 	}
 	return jen.Type().Id(sym.Name).StructFunc(func(st *jen.Group) {
 		for _, field := range fields {
-			st.Id(field.Name).Add(generatePrefix(field.RawType)).Add(generateType(field.Type)).Tag(field.Tags)
+			st.Id(field.Name).Add(generatePrefix(field.RawType)).Add(generateType(field.Type)).Tag(field.Tags).Comment(field.Comment())
 		}
 	}), nil
 }

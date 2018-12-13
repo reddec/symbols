@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/jessevdk/go-flags"
 	"github.com/reddec/symbols"
@@ -11,6 +12,7 @@ import (
 func main() {
 	parser := flags.NewParser(nil, flags.Default)
 	parser.AddCommand("mutate", "mutate struct", "mutate struct and generate mappers for them", &mutateStruct{})
+	parser.AddCommand("methods", "list methods", "list all found methods in all packages", &methods{})
 	_, err := parser.Parse()
 	if err != nil {
 		os.Exit(1)
@@ -27,10 +29,11 @@ type mutateStruct struct {
 	Exclude      []string `long:"exclude" env:"EXCLUDE" description:"Exclude fields"`
 	Drop         []string `long:"drop" env:"DROP" description:"Drop fields"`
 	Value        bool     `long:"value" env:"VALUE" description:"Map items passed by value"`
+	ScanLimit    int      `long:"scan-limit" env:"SCAN_LIMIT" description:"Maximum amount of packages to scan. -1 - all" default:"-1"`
 }
 
 func (m *mutateStruct) Execute([]string) error {
-	proj, err := symbols.ProjectByDir(".")
+	proj, err := symbols.ProjectByDir(".", m.ScanLimit)
 	if err != nil {
 		return err
 	}
@@ -95,4 +98,29 @@ func (m *mutateStruct) Execute([]string) error {
 	}
 
 	return out.Render(os.Stdout)
+}
+
+type methods struct {
+	ScanLimit int `long:"scan-limit" env:"SCAN_LIMIT" description:"Maximum amount of packages to scan. -1 - all" default:"-1"`
+}
+
+func (m *methods) Execute([]string) error {
+	proj, err := symbols.ProjectByDir(".", m.ScanLimit)
+	if err != nil {
+		return err
+	}
+	for _, imp := range proj.Imports {
+		err := imp.Symbols(func(sym *symbols.Symbol) error {
+			fn, err := sym.Function()
+			if err != nil {
+				return nil
+			}
+			fmt.Println(fn.Name)
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

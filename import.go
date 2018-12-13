@@ -65,6 +65,18 @@ func (imp *Import) FindFile(name string) *File {
 	return nil
 }
 
+func (imp *Import) Symbols(walk func(sym *Symbol) error) error {
+	for _, f := range imp.Files {
+		err := f.Symbols(func(node ast.Node, f *File, name string) error {
+			return walk(&Symbol{Import: imp, File: f, Node: node, Name: name})
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (f *File) FindSymbol(targetName string) ast.Node {
 	var stack []ast.Node
 	for i := len(f.Ast.Decls) - 1; i >= 0; i-- {
@@ -102,7 +114,37 @@ func (f *File) FindSymbol(targetName string) ast.Node {
 	return nil
 }
 
-func (f *File) Symbols() []string {
+func (f *File) Symbols(walk func(node ast.Node, f *File, name string) error) error {
+	var stack []ast.Node
+	for i := len(f.Ast.Decls) - 1; i >= 0; i-- {
+		stack = append(stack, f.Ast.Decls[i])
+	}
+	var err error
+	for len(stack) > 0 && err == nil {
+		node := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		switch v := node.(type) {
+		case *ast.TypeSpec:
+			err = walk(v, f, v.Name.Name)
+		case *ast.GenDecl:
+			for _, spec := range v.Specs {
+				stack = append(stack, spec)
+			}
+		case *ast.FuncDecl:
+			err = walk(v, f, v.Name.Name)
+		case *ast.Ident:
+			err = walk(v, f, v.Name)
+		case *ast.ValueSpec:
+			for _, name := range v.Names {
+				err = walk(v, f, name.Name)
+			}
+
+		}
+	}
+	return err
+}
+
+func (f *File) SymbolsNames() []string {
 	var stack []ast.Node
 	for i := len(f.Ast.Decls) - 1; i >= 0; i-- {
 		stack = append(stack, f.Ast.Decls[i])

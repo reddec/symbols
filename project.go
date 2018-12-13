@@ -15,8 +15,8 @@ type Project struct {
 	Package *Import
 }
 
-func ProjectByPackage(packageImport string) (*Project, error) {
-	imps, err := ScanPackage(packageImport)
+func ProjectByPackage(packageImport string, limit int) (*Project, error) {
+	imps, err := ScanPackage(packageImport, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -30,8 +30,8 @@ func ProjectByPackage(packageImport string) (*Project, error) {
 	}, nil
 }
 
-func ProjectByDir(location string) (*Project, error) {
-	imps, pkg, err := selfScan(location)
+func ProjectByDir(location string, limit int) (*Project, error) {
+	imps, pkg, err := selfScan(location, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (prj *Project) FindLocalSymbol(name string) (*Symbol, error) {
 func (prj *Project) Names() []string {
 	var ans []string
 	for _, v := range prj.Package.Files {
-		ans = append(ans, v.Symbols()...)
+		ans = append(ans, v.SymbolsNames()...)
 	}
 	return ans
 }

@@ -9,7 +9,7 @@ import (
 func TestScan(t *testing.T) {
 	pack := "github.com/reddec/astools"
 
-	proj, err := ProjectByPackage(pack)
+	proj, err := ProjectByPackage(pack, All)
 
 	if err != nil {
 		t.Error(err)
@@ -36,7 +36,7 @@ func TestScan(t *testing.T) {
 
 func TestVars(t *testing.T) {
 	pack := "github.com/reddec/liana/cmd/liana"
-	proj, err := ProjectByPackage(pack)
+	proj, err := ProjectByPackage(pack, 1)
 
 	if err != nil {
 		t.Error(err)
@@ -55,14 +55,14 @@ func TestVars(t *testing.T) {
 
 func TestScanPackage(t *testing.T) {
 	dir := "."
-	proj, err := ProjectByDir(dir)
+	proj, err := ProjectByDir(dir, 1)
 	assert.NoError(t, err)
 	assert.Equal(t, "symbols", proj.Package.Package)
 }
 
 func TestAliases(t *testing.T) {
 	dir := "./sample"
-	proj, err := ProjectByDir(dir)
+	proj, err := ProjectByDir(dir, All)
 	assert.NoError(t, err)
 	sym, err := proj.FindSymbol("empty.Header", proj.Package.Files[0])
 	assert.NoError(t, err)
@@ -74,7 +74,7 @@ type SampleIface interface {
 }
 
 func TestSymbol_Methods(t *testing.T) {
-	proj, err := ProjectByDir(".")
+	proj, err := ProjectByDir(".", 1)
 	assert.NoError(t, err)
 	assert.Equal(t, "symbols", proj.Package.Package)
 	sym, err := proj.FindLocalSymbol("SampleIface")

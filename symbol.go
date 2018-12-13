@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Symbol struct {
@@ -164,6 +165,13 @@ type Field struct {
 	Tags    map[string]string
 }
 
+func (f *Field) Comment() string {
+	if f.Raw.Comment == nil {
+		return ""
+	}
+	return strings.TrimSpace(f.Raw.Comment.Text())
+}
+
 func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
 	st, ok := (sym.Node.(*ast.TypeSpec)).Type.(*ast.StructType)
 	if !ok {
@@ -225,6 +233,22 @@ func (sym *Symbol) Methods(resolver Resolver) ([]*Method, error) {
 		}
 	}
 	return ans, nil
+}
+
+type Function struct {
+	Name string
+	Raw  *ast.FuncDecl
+}
+
+func (sym *Symbol) Function() (*Function, error) {
+	ifs, ok := sym.Node.(*ast.FuncDecl)
+	if !ok {
+		return nil, errors.New("is not a method")
+	}
+	return &Function{
+		Name: ifs.Name.Name,
+		Raw:  ifs,
+	}, nil
 }
 
 func realTypeQN(t ast.Node) string {

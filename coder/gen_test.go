@@ -13,23 +13,23 @@ const sample = `package main
 import "bytes"
 
 type Hello struct {
-	A      int
-	B      *string
-	C      []*float64
-	Buffer *bytes.Buffer ` + "`json:\"xxx\"`" + `
+	A      int           // comment
+	B      *string       // another comment
+	C      []*float64    // also
+	Buffer *bytes.Buffer ` + "`json:\"xxx\"`" + ` // text
 }
 `
 
 type Hello struct {
-	A      int
-	B      *string
-	C      []*float64
-	Buffer *bytes.Buffer `json:"xxx"`
+	A      int           // comment
+	B      *string       // another comment
+	C      []*float64    // also
+	Buffer *bytes.Buffer `json:"xxx"` // text
 }
 
 func TestGenerateStruct(t *testing.T) {
 	out := jen.NewFile("main")
-	sym, err := symbols.ProjectByDir(".")
+	sym, err := symbols.ProjectByDir(".", symbols.All)
 	assert.NoError(t, err, "parse")
 	st, err := sym.FindSymbol("Hello", sym.Package.FindFile("gen_test.go"))
 	assert.NoError(t, err, "find struct")
@@ -47,15 +47,15 @@ func TestGenerateStruct(t *testing.T) {
 const sample2 = `package main
 
 type Hello struct {
-	A int
-	B *string
-	C []*float64
+	A int        // comment
+	B *string    // another comment
+	C []*float64 // also
 }
 `
 
 func TestMutateStruct(t *testing.T) {
 	out := jen.NewFile("main")
-	sym, err := symbols.ProjectByDir(".")
+	sym, err := symbols.ProjectByDir(".", symbols.All)
 	assert.NoError(t, err, "parse")
 	st, err := sym.FindSymbol("Hello", sym.Package.FindFile("gen_test.go"))
 	assert.NoError(t, err, "find struct")
@@ -104,7 +104,7 @@ func MapA(srcA *coder.A, userID int64) *coder.UserA {
 
 func TestGenerateStructMapper(t *testing.T) {
 	out := jen.NewFile("main")
-	sym, err := symbols.ProjectByDir(".")
+	sym, err := symbols.ProjectByDir(".", symbols.All)
 	assert.NoError(t, err, "parse")
 	stA, err := sym.FindSymbol("A", sym.Package.FindFile("gen_test.go"))
 	assert.NoError(t, err, "find struct A")

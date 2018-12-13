@@ -14,6 +14,8 @@ import (
 	"strings"
 )
 
+const All = -1
+
 type File struct {
 	Filename string
 	Import   string
@@ -39,32 +41,35 @@ type Import struct {
 	Files     []*File
 }
 
-func Scan(dir string) (Imports, error) {
-	imps, _, err := selfScan(dir)
+func Scan(dir string, limit int) (Imports, error) {
+	imps, _, err := selfScan(dir, limit)
 	return imps, err
 }
 
-func selfScan(dir string) (Imports, string, error) {
+func selfScan(dir string, limit int) (Imports, string, error) {
 	var path = lookupFolders(dir)
 	selfPackage, err := findPackageByDir(dir, path...)
 	if err != nil {
 		return nil, "", err
 	}
 
-	imps, err := scanPackageWithLookups(selfPackage, path)
+	imps, err := scanPackageWithLookups(selfPackage, path, limit)
 	return imps, selfPackage, err
 }
 
-func ScanPackage(importPath string) (Imports, error) {
-	return scanPackageWithLookups(importPath, lookupFolders("."))
+func ScanPackage(importPath string, limit int) (Imports, error) {
+	return scanPackageWithLookups(importPath, lookupFolders("."), limit)
 
 }
 
-func scanPackageWithLookups(importName string, path []string) (Imports, error) {
+func scanPackageWithLookups(importName string, path []string, packagesLimit int) (Imports, error) {
 	var imports = make(map[string]Import)
 	var packagesToScan = []string{importName}
-
+	var scanned int
 	for len(packagesToScan) > 0 {
+		if packagesLimit != All && scanned >= packagesLimit {
+			break
+		}
 		toScan := packagesToScan[len(packagesToScan)-1]
 		packagesToScan = packagesToScan[:len(packagesToScan)-1]
 		if _, scanned := imports[toScan]; scanned {
@@ -91,6 +96,7 @@ func scanPackageWithLookups(importName string, path []string) (Imports, error) {
 				packagesToScan = append(packagesToScan, importPath)
 			}
 		}
+		scanned++
 	}
 
 	// map result
