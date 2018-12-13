@@ -11,11 +11,12 @@ import (
 )
 
 type Symbol struct {
-	Import  *Import
-	File    *File
-	Node    ast.Node
-	Name    string
-	BuiltIn bool
+	Import     *Import
+	File       *File
+	Node       ast.Node
+	ParentNode ast.Node
+	Name       string
+	BuiltIn    bool
 }
 
 func (sym *Symbol) WithNode(node ast.Node) *Symbol {
@@ -162,17 +163,26 @@ type Field struct {
 	Type    *Symbol
 	RawType ast.Expr
 	Raw     *ast.Field
+	Parent  *ast.TypeSpec
 	Tags    map[string]string
 }
 
 func (f *Field) Comment() string {
-	if f.Raw.Comment == nil {
-		return ""
+	var txt string
+	if f.Raw.Doc != nil {
+		txt = f.Raw.Doc.Text()
 	}
-	return strings.TrimSpace(f.Raw.Comment.Text())
+	if f.Raw.Comment != nil {
+		if txt != "" {
+			txt += "\n"
+		}
+		txt += f.Raw.Comment.Text()
+	}
+	return strings.TrimSpace(txt)
 }
 
 func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
+	tps := sym.Node.(*ast.TypeSpec)
 	st, ok := (sym.Node.(*ast.TypeSpec)).Type.(*ast.StructType)
 	if !ok {
 		return nil, errors.New("is not a struct")
@@ -180,7 +190,7 @@ func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
 	var ans []*Field
 	for _, p := range st.Fields.List {
 		if len(p.Names) == 1 {
-			field, err := wrapField(p, resolver, sym.File)
+			field, err := wrapField(p, tps, resolver, sym.File)
 			if err != nil {
 				return nil, err
 			}
@@ -191,7 +201,7 @@ func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
 	return ans, nil
 }
 
-func wrapField(p *ast.Field, resolver Resolver, file *File) (*Field, error) {
+func wrapField(p *ast.Field, parent *ast.TypeSpec, resolver Resolver, file *File) (*Field, error) {
 	sm, err := resolver.FindSymbol(realTypeQN(p.Type), file)
 	if err != nil {
 		return nil, errors.Wrapf(err, "get real type of %v", p.Names[0])
@@ -206,6 +216,7 @@ func wrapField(p *ast.Field, resolver Resolver, file *File) (*Field, error) {
 		RawType: p.Type,
 		Raw:     p,
 		Tags:    parseTags(rawTags),
+		Parent:  parent,
 	}, nil
 }
 

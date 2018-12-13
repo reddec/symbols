@@ -20,16 +20,17 @@ func main() {
 }
 
 type mutateStruct struct {
-	SourceStruct string   `long:"source" env:"SOURCE_STRUCT" description:"Name of source struct" required:"true"`
-	Target       string   `long:"target" env:"TARGET" description:"Name of target struct" required:"true"`
-	Map          string   `long:"map" env:"MAP" description:"Name of function to map from source to target"`
-	Unmap        string   `long:"unmap" env:"UNMAP" description:"Name of function to map form target to source"`
-	SelfMap      string   `long:"self-map" env:"SELF_MAP" description:"Name of function to map from source to target (self)"`
-	SelfUnmap    string   `long:"self-unmap" env:"SELF_UNMAP" description:"Name of function to map form target to source"`
-	Exclude      []string `long:"exclude" env:"EXCLUDE" description:"Exclude fields"`
-	Drop         []string `long:"drop" env:"DROP" description:"Drop fields"`
-	Value        bool     `long:"value" env:"VALUE" description:"Map items passed by value"`
-	ScanLimit    int      `long:"scan-limit" env:"SCAN_LIMIT" description:"Maximum amount of packages to scan. -1 - all" default:"-1"`
+	SourceStruct      string   `long:"source" env:"SOURCE_STRUCT" description:"Name of source struct" required:"true"`
+	Target            string   `long:"target" env:"TARGET" description:"Name of target struct" required:"true"`
+	Map               string   `long:"map" env:"MAP" description:"Name of function to map from source to target"`
+	Unmap             string   `long:"unmap" env:"UNMAP" description:"Name of function to map form target to source"`
+	SelfMap           string   `long:"self-map" env:"SELF_MAP" description:"Name of function to map from source to target (self)"`
+	SelfUnmap         string   `long:"self-unmap" env:"SELF_UNMAP" description:"Name of function to map form target to source"`
+	Exclude           []string `long:"exclude" env:"EXCLUDE" description:"Exclude fields"`
+	Drop              []string `long:"drop" env:"DROP" description:"Drop fields"`
+	Value             bool     `long:"value" env:"VALUE" description:"Map items passed by value"`
+	ScanLimit         int      `long:"scan-limit" env:"SCAN_LIMIT" description:"Maximum amount of packages to scan. -1 - all" default:"-1"`
+	RequiredByComment string   `long:"required-by-comment" env:"REQUIRED_BY_COMMENT" description:"Add validation method that checks that fields with specified comments are not as default values" default:""`
 }
 
 func (m *mutateStruct) Execute([]string) error {
@@ -91,6 +92,13 @@ func (m *mutateStruct) Execute([]string) error {
 	if m.SelfUnmap != "" {
 		// generate map to source
 		generated, err = coder.GenerateSelfStructMapper(mutated, sym, proj, m.SelfUnmap, !m.Value)
+		if err != nil {
+			return err
+		}
+		out.Add(generated)
+	}
+	if m.RequiredByComment != "" {
+		generated, err = coder.GenerateValidationByComment(mutated, proj, m.RequiredByComment)
 		if err != nil {
 			return err
 		}

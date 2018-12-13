@@ -6,6 +6,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/reddec/symbols"
 	"go/ast"
+	"sort"
+	"strings"
 )
 
 func generatePrefix(expr ast.Expr) jen.Code {
@@ -32,7 +34,11 @@ func GenerateStruct(sym *symbols.Symbol, resolver symbols.Resolver) (jen.Code, e
 	}
 	return jen.Type().Id(sym.Name).StructFunc(func(st *jen.Group) {
 		for _, field := range fields {
-			st.Id(field.Name).Add(generatePrefix(field.RawType)).Add(generateType(field.Type)).Tag(field.Tags).Comment(field.Comment())
+			f := st.Id(field.Name).Add(generatePrefix(field.RawType)).Add(generateType(field.Type)).Tag(field.Tags)
+			comment := field.Comment()
+			if comment != "" {
+				f.Comment(comment)
+			}
 		}
 	}), nil
 }
@@ -121,5 +127,48 @@ func mapStruct(targetName string, srcName string, exists map[string]*symbols.Fie
 			group.Return(jen.Id(targetName))
 		}
 	})
+}
+func GenerateValidationByComment(sym *symbols.Symbol, resolver symbols.Resolver, requiredComment string) (jen.Code, error) {
+	sFields, err := sym.Fields(resolver)
+	if err != nil {
+		return nil, err
+	}
+	var fields []string
+	for _, f := range sFields {
+		if strings.Contains(f.Name, requiredComment) {
+			fields = append(fields, f.Name)
+		}
+	}
+	return GenerateValidation(sym, resolver, fields)
+}
 
+func GenerateValidation(sym *symbols.Symbol, resolver symbols.Resolver, requiredField []string) (jen.Code, error) {
+	sFields, err := sym.Fields(resolver)
+	if err != nil {
+		return nil, err
+	}
+	sort.Strings(requiredField)
+	var reallyRequired []string
+	for _, f := range sFields {
+		if i := sort.SearchStrings(requiredField, f.Name); i < len(requiredField) && requiredField[i] == f.Name {
+			reallyRequired = append(reallyRequired, f.Name)
+		}
+	}
+	return jen.Func().Parens(jen.Id("self").Op("*").Id(sym.Name)).Id("Validate").Params().Error().BlockFunc(func(group *jen.Group) {
+		if len(reallyRequired) == 0 {
+			group.Return(jen.Nil())
+			return
+		}
+		group.Var().Id("byDefault").Add(generateType(sym))
+		group.Var().Id("errors").Index().String()
+		for _, field := range reallyRequired {
+			group.If(jen.Id("self").Dot(field).Op("==").Id("byDefault").Dot(field)).BlockFunc(func(ifDef *jen.Group) {
+				ifDef.Id("errors").Op("=").Append(jen.Id("errors"), jen.Lit(field+" is not defined"))
+			})
+		}
+		group.If(jen.Id("errors").Op("==").Nil()).BlockFunc(func(ifOk *jen.Group) {
+			ifOk.Return(jen.Nil())
+		})
+		group.Return(jen.Qual("errors", "New").Call(jen.Qual("strings", "Join").Call(jen.Id("errors"), jen.Lit(", "))))
+	}), nil
 }

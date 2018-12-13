@@ -50,7 +50,7 @@ func (imp *Import) FindSymbol(name string) *Symbol {
 	for _, f := range imp.Files {
 		node := f.FindSymbol(name)
 		if node != nil {
-			return &Symbol{Import: imp, File: f, Node: node, Name: name}
+			return &Symbol{Import: imp, File: f, Node: node.Raw, ParentNode: node.Parent, Name: name}
 		}
 	}
 	return nil
@@ -77,36 +77,41 @@ func (imp *Import) Symbols(walk func(sym *Symbol) error) error {
 	return nil
 }
 
-func (f *File) FindSymbol(targetName string) ast.Node {
-	var stack []ast.Node
+type Node struct {
+	Raw    ast.Node
+	Parent ast.Node
+}
+
+func (f *File) FindSymbol(targetName string) *Node {
+	var stack []Node
 	for i := len(f.Ast.Decls) - 1; i >= 0; i-- {
-		stack = append(stack, f.Ast.Decls[i])
+		stack = append(stack, Node{Raw: f.Ast.Decls[i], Parent: f.Ast})
 	}
 
 	for len(stack) > 0 {
 		node := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
-		switch v := node.(type) {
+		switch v := node.Raw.(type) {
 		case *ast.TypeSpec:
 			if v.Name.Name == targetName {
-				return v
+				return &node
 			}
 		case *ast.GenDecl:
 			for _, spec := range v.Specs {
-				stack = append(stack, spec)
+				stack = append(stack, Node{Raw: spec, Parent: node.Raw})
 			}
 		case *ast.FuncDecl:
 			if v.Name.Name == targetName {
-				return v
+				return &node
 			}
 		case *ast.Ident:
 			if v.Name == targetName {
-				return v
+				return &node
 			}
 		case *ast.ValueSpec:
 			for _, name := range v.Names {
 				if name.Name == targetName {
-					return name
+					return &Node{Raw: name, Parent: v}
 				}
 			}
 		}

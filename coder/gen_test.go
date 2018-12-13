@@ -13,7 +13,7 @@ const sample = `package main
 import "bytes"
 
 type Hello struct {
-	A      int           // comment
+	A      int           // A comment
 	B      *string       // another comment
 	C      []*float64    // also
 	Buffer *bytes.Buffer ` + "`json:\"xxx\"`" + ` // text
@@ -21,7 +21,8 @@ type Hello struct {
 `
 
 type Hello struct {
-	A      int           // comment
+	// A comment
+	A      int
 	B      *string       // another comment
 	C      []*float64    // also
 	Buffer *bytes.Buffer `json:"xxx"` // text
@@ -86,7 +87,7 @@ type A struct {
 }
 
 type UserA struct {
-	UserID  int64
+	UserID  int64 // required
 	Request string
 }
 
@@ -119,4 +120,41 @@ func TestGenerateStructMapper(t *testing.T) {
 	assert.NoError(t, err, "render")
 
 	assert.Equal(t, sample3, buf.String(), "compare generated")
+}
+
+const sampleRequired = `package main
+
+import (
+	"errors"
+	coder "github.com/reddec/symbols/coder"
+	"strings"
+)
+
+func (self *UserA) Validate() error {
+	var byDefault coder.UserA
+	var errors []string
+	if self.UserID == byDefault.UserID {
+		errors = append(errors, "UserID is not defined")
+	}
+	if errors == nil {
+		return nil
+	}
+	return errors.New(strings.Join(errors, ", "))
+}
+`
+
+func TestGenerateValidation(t *testing.T) {
+	out := jen.NewFile("main")
+	sym, err := symbols.ProjectByDir(".", symbols.All)
+	assert.NoError(t, err, "parse")
+	userA, err := sym.FindSymbol("UserA", sym.Package.FindFile("gen_test.go"))
+	assert.NoError(t, err, "find struct UserA")
+
+	generated, err := GenerateValidation(userA, sym, []string{"UserID"})
+	assert.NoError(t, err, "generate")
+	out.Add(generated)
+	buf := &bytes.Buffer{}
+	err = out.Render(buf)
+	assert.NoError(t, err, "render")
+	assert.Equal(t, sampleRequired, buf.String(), "compare generated")
 }
