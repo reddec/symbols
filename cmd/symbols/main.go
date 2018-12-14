@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/dave/jennifer/jen"
 	"github.com/jessevdk/go-flags"
 	"github.com/reddec/symbols"
 	"github.com/reddec/symbols/coder"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -20,8 +22,8 @@ func main() {
 }
 
 type mutateStruct struct {
-	SourceStruct      string   `long:"source" env:"SOURCE_STRUCT" description:"Name of source struct" required:"true"`
-	Target            string   `long:"target" env:"TARGET" description:"Name of target struct" required:"true"`
+	SourceStruct      string   `long:"source" env:"SOURCE_STRUCT" description:"Name of source struct"`
+	Target            string   `long:"target" env:"TARGET" description:"Name of target struct"`
 	Map               string   `long:"map" env:"MAP" description:"Name of function to map from source to target"`
 	Unmap             string   `long:"unmap" env:"UNMAP" description:"Name of function to map form target to source"`
 	SelfMap           string   `long:"self-map" env:"SELF_MAP" description:"Name of function to map from source to target (self)"`
@@ -33,11 +35,43 @@ type mutateStruct struct {
 	RequiredByComment string   `long:"required-by-comment" env:"REQUIRED_BY_COMMENT" description:"Add validation method that checks that fields with specified comments are not as default values" default:""`
 }
 
-func (m *mutateStruct) Execute([]string) error {
+func (m *mutateStruct) Execute(args []string) error {
+
 	proj, err := symbols.ProjectByDir(".", m.ScanLimit)
 	if err != nil {
 		return err
 	}
+	out := jen.NewFilePathName(proj.Package.Import, proj.Package.Package)
+	if len(args) == 1 && args[0] == "-" {
+		reader := bufio.NewReader(os.Stdin)
+		for line, err := reader.ReadString('\n'); err == nil; line, err = reader.ReadString('\n') {
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			line = line + " X"
+			subm := &mutateStruct{}
+			_, err = flags.ParseArgs(subm, strings.Split(line, " "))
+			if err != nil {
+				return err
+			}
+			err = addGeneration(out, subm, proj)
+			if err != nil {
+				return err
+			}
+		}
+
+	} else if len(args) == 1 && args[0] == "X" {
+		return nil
+	} else {
+		err = addGeneration(out, m, proj)
+		if err != nil {
+			return err
+		}
+	}
+	return out.Render(os.Stdout)
+}
+
+func addGeneration(out *jen.File, m *mutateStruct, proj *symbols.Project) error {
 	sym, err := proj.FindLocalSymbol(m.SourceStruct)
 	if err != nil {
 		return err
@@ -55,8 +89,6 @@ func (m *mutateStruct) Execute([]string) error {
 	}
 	mutated.Name = m.Target
 	mutated.Import = proj.Package
-
-	out := jen.NewFilePathName(proj.Package.Import, proj.Package.Package)
 
 	generated, err := coder.GenerateStruct(mutated, proj)
 	if err != nil {
@@ -104,8 +136,7 @@ func (m *mutateStruct) Execute([]string) error {
 		}
 		out.Add(generated)
 	}
-
-	return out.Render(os.Stdout)
+	return nil
 }
 
 type methods struct {

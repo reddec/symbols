@@ -169,6 +169,6 @@ func GenerateValidation(sym *symbols.Symbol, resolver symbols.Resolver, required
 		group.If(jen.Id("errors").Op("==").Nil()).BlockFunc(func(ifOk *jen.Group) {
 			ifOk.Return(jen.Nil())
 		})
-		group.Return(jen.Qual("errors", "New").Call(jen.Qual("strings", "Join").Call(jen.Id("errors"), jen.Lit(", "))))
+		group.Return(jen.Qual("github.com/pkg/errors", "New").Call(jen.Qual("strings", "Join").Call(jen.Id("errors"), jen.Lit(", "))))
 	}), nil
 }
