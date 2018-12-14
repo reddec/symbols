@@ -160,15 +160,15 @@ func GenerateValidation(sym *symbols.Symbol, resolver symbols.Resolver, required
 			return
 		}
 		group.Var().Id("byDefault").Add(generateType(sym))
-		group.Var().Id("errors").Index().String()
+		group.Var().Id("errorsTxt").Index().String()
 		for _, field := range reallyRequired {
 			group.If(jen.Id("self").Dot(field).Op("==").Id("byDefault").Dot(field)).BlockFunc(func(ifDef *jen.Group) {
-				ifDef.Id("errors").Op("=").Append(jen.Id("errors"), jen.Lit(field+" is not defined"))
+				ifDef.Id("errorsTxt").Op("=").Append(jen.Id("errors"), jen.Lit(field+" is not defined"))
 			})
 		}
-		group.If(jen.Id("errors").Op("==").Nil()).BlockFunc(func(ifOk *jen.Group) {
+		group.If(jen.Id("errorsTxt").Op("==").Nil()).BlockFunc(func(ifOk *jen.Group) {
 			ifOk.Return(jen.Nil())
 		})
-		group.Return(jen.Qual("github.com/pkg/errors", "New").Call(jen.Qual("strings", "Join").Call(jen.Id("errors"), jen.Lit(", "))))
+		group.Return(jen.Qual("github.com/pkg/errors", "New").Call(jen.Qual("strings", "Join").Call(jen.Id("errorsTxt"), jen.Lit(", "))))
 	}), nil
 }
