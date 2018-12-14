@@ -163,7 +163,7 @@ func GenerateValidation(sym *symbols.Symbol, resolver symbols.Resolver, required
 		group.Var().Id("errorsTxt").Index().String()
 		for _, field := range reallyRequired {
 			group.If(jen.Id("self").Dot(field).Op("==").Id("byDefault").Dot(field)).BlockFunc(func(ifDef *jen.Group) {
-				ifDef.Id("errorsTxt").Op("=").Append(jen.Id("errors"), jen.Lit(field+" is not defined"))
+				ifDef.Id("errorsTxt").Op("=").Append(jen.Id("errorsTxt"), jen.Lit(field+" is not defined"))
 			})
 		}
 		group.If(jen.Id("errorsTxt").Op("==").Nil()).BlockFunc(func(ifOk *jen.Group) {
