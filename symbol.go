@@ -201,6 +201,20 @@ func (sym *Symbol) Fields(resolver Resolver) ([]*Field, error) {
 	return ans, nil
 }
 
+func (sym *Symbol) FieldsNames() ([]string, error) {
+	st, ok := (sym.Node.(*ast.TypeSpec)).Type.(*ast.StructType)
+	if !ok {
+		return nil, errors.New("is not a struct")
+	}
+	var ans []string
+	for _, p := range st.Fields.List {
+		if len(p.Names) == 1 {
+			ans = append(ans, p.Names[0].Name)
+		}
+	}
+	return ans, nil
+}
+
 func wrapField(p *ast.Field, parent *ast.TypeSpec, resolver Resolver, file *File) (*Field, error) {
 	sm, err := resolver.FindSymbol(realTypeQN(p.Type), file)
 	if err != nil {
@@ -274,8 +288,10 @@ func realTypeQN(t ast.Node) string {
 	}
 	if _, ok := t.(*ast.StructType); ok {
 		// embedded struct
+		// todo: do as normal
 		return "struct{}"
 	}
+	// todo: respect map
 	v := t.(*ast.Ident)
 	return v.Name
 }
