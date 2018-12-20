@@ -252,5 +252,6 @@ var builtinTypes = map[string]bool{
 	"float64":     true,
 	"interface{}": true,
 	"struct{}":    true, //temporary hack
+	"map":         true, //temporary hack
 	"error":       true,
 }

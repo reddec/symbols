@@ -291,7 +291,10 @@ func realTypeQN(t ast.Node) string {
 		// todo: do as normal
 		return "struct{}"
 	}
-	// todo: respect map
+	if _, ok := t.(*ast.MapType); ok {
+		// todo: respect map
+		return "map"
+	}
 	v := t.(*ast.Ident)
 	return v.Name
 }
