@@ -25,6 +25,16 @@ func (sym *Symbol) WithNode(node ast.Node) *Symbol {
 	return &s
 }
 
+func (sym *Symbol) Is(importPath string, typeName string) bool {
+	if sym.BuiltIn {
+		return false
+	}
+	if sym.Name != typeName {
+		return false
+	}
+	return sym.Import.Import == importPath
+}
+
 func (sym *Symbol) Equal(b *Symbol) bool {
 	if sym.Name != b.Name {
 		return false
