@@ -75,6 +75,19 @@ func (sym *Symbol) IsStruct() bool {
 	return ok
 }
 
+func (sym *Symbol) IsStructDefinition() bool {
+	if !sym.IsType() {
+		return false
+	}
+	_, ok := sym.Node.(*ast.StructType)
+	return ok
+}
+
+func (sym *Symbol) IsMap() bool {
+	_, ok := sym.Node.(*ast.MapType)
+	return ok
+}
+
 func (sym *Symbol) IsInterface() bool {
 	if !sym.IsType() {
 		return false
