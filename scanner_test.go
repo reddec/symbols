@@ -3,6 +3,7 @@ package symbols
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	"path/filepath"
 	"testing"
 )
 
@@ -86,18 +87,19 @@ func TestSymbol_Methods(t *testing.T) {
 }
 
 type A struct {
-	Field []byte
+	Field []filepath.WalkFunc
 }
 
 func TestArray(t *testing.T) {
-	proj, err := ProjectByDir(".", 1)
+	proj, err := ProjectByDir("sample", 20)
 	assert.NoError(t, err)
 	sym, err := proj.FindLocalSymbol("A")
 	assert.NoError(t, err, "find interface")
 	fields, err := sym.Fields(proj)
 	assert.NoError(t, err)
 	a := fields[0]
-	symbolOf(a.Raw.Type)
-	assert.True(t, a.Type.IsArray())
-	assert.True(t, a.Type.ArrayItem(proj).BuiltIn)
+	rType := a.Raw.Type
+
+	assert.True(t, IsArray(rType))
+	//assert.True(t, IsIdent(ArrayItem(rType)))
 }
