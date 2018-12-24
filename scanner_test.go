@@ -84,3 +84,20 @@ func TestSymbol_Methods(t *testing.T) {
 	assert.NoError(t, err, "methods")
 	t.Log(methods)
 }
+
+type A struct {
+	Field []byte
+}
+
+func TestArray(t *testing.T) {
+	proj, err := ProjectByDir(".", 1)
+	assert.NoError(t, err)
+	sym, err := proj.FindLocalSymbol("A")
+	assert.NoError(t, err, "find interface")
+	fields, err := sym.Fields(proj)
+	assert.NoError(t, err)
+	a := fields[0]
+	symbolOf(a.Raw.Type)
+	assert.True(t, a.Type.IsArray())
+	assert.True(t, a.Type.ArrayItem(proj).BuiltIn)
+}

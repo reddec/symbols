@@ -62,6 +62,15 @@ func (sym *Symbol) String() string {
 	return fmt.Sprint(sym.Import.Package, "{", sym.Import.Import, "}", sym.Name, "=", val)
 }
 
+func (sym *Symbol) ArrayItem(resolver Resolver) *Symbol {
+	v := sym.Node.(*ast.ArrayType)
+	sm, err := resolver.FindSymbol(realTypeQN(v.Elt), sym.File)
+	if err != nil {
+		panic(err)
+	}
+	return sm
+}
+
 func (sym *Symbol) IsFunction() bool {
 	_, ok := sym.Node.(*ast.FuncDecl)
 	return ok
@@ -167,6 +176,27 @@ func (sym *Symbol) VarType() (*Symbol, error) {
 		}
 	}
 	return nil, errors.Errorf("unknown var kind %v", v.Obj.Kind)
+}
+
+func symbolOf(node ast.Node) *Symbol {
+	//builtinTypes[qualifiedName]
+	switch t := node.(type) {
+	case *ast.StarExpr:
+		return &Symbol{Node: t}
+	case *ast.ArrayType:
+		return &Symbol{Node: t}
+	case *ast.SelectorExpr:
+	case *ast.StructType:
+	case *ast.MapType:
+	case *ast.Ident:
+	default:
+		panic("unknown symbol type")
+	}
+	return nil
+}
+
+type InfoNode struct {
+	Node ast.Node
 }
 
 func unref(v reflect.Type) reflect.Type {

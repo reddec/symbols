@@ -48,7 +48,7 @@ func TestGenerateStruct(t *testing.T) {
 const sample2 = `package main
 
 type Hello struct {
-	A int        // comment
+	A int        // A comment
 	B *string    // another comment
 	C []*float64 // also
 }
@@ -125,21 +125,21 @@ func TestGenerateStructMapper(t *testing.T) {
 const sampleRequired = `package main
 
 import (
-	"errors"
+	errors "github.com/pkg/errors"
 	coder "github.com/reddec/symbols/coder"
 	"strings"
 )
 
 func (self *UserA) Validate() error {
 	var byDefault coder.UserA
-	var errors []string
+	var errorsTxt []string
 	if self.UserID == byDefault.UserID {
-		errors = append(errors, "UserID is not defined")
+		errorsTxt = append(errorsTxt, "UserID is not defined")
 	}
-	if errors == nil {
+	if errorsTxt == nil {
 		return nil
 	}
-	return errors.New(strings.Join(errors, ", "))
+	return errors.New(strings.Join(errorsTxt, ", "))
 }
 `
 
