@@ -116,6 +116,10 @@ func lookupFolders(root string) []string {
 		if vendorDir != "" {
 			path = append(path, vendorDir)
 		}
+		goModDir := findGoModuleDir(root)
+		if goModDir != "" {
+			path = append(path, goModDir)
+		}
 	}
 	return append(path, goPath, goRoot)
 }
@@ -232,6 +236,28 @@ func findVendorDir(dir string) string {
 		return ""
 	}
 	return findVendorDir(up)
+}
+
+func findGoModuleDir(dir string) string {
+	gomodFile := filepath.Join(dir, "go.mod")
+	st, err := os.Stat(gomodFile)
+	if !os.IsNotExist(err) && err != nil {
+		return ""
+	} else if err == nil && !st.IsDir() {
+		pth, err := filepath.Abs(filepath.Join(dir, ".."))
+		if err != nil {
+			panic(err)
+		}
+		return pth
+	}
+	up, err := filepath.Abs(filepath.Join(dir, ".."))
+	if err != nil {
+		panic(err)
+	}
+	if up == dir {
+		return ""
+	}
+	return findGoModuleDir(up)
 }
 
 var builtinTypes = map[string]bool{
